@@ -1,0 +1,279 @@
+ 1) CRTSQLRPGI OBJ(SACBEER1) OBJTYPE(*MODULE) RPGPPOPT(*LVL2) DBGVIEW(*SOURCE)
+2) CRTPGM PGM(SACBEER1) MODULE(SACBEER1 JSON00R) BNDSRVPGM((YAJL) (YAJLR4) (QHTTPSVR/QZHBCGI)) ACTGRP(REST) 
+
+      //=======================================================================
+      //=  Author...........: Esteban Cabero                                  =
+      //=  Date.............: 2020/01/30                                      =
+      //=  Description......: File SACBEEP REST API - GET                     =
+      //=  Program summary..: REST API                                        =
+      //=  Before Compile...: CRTSQLRPGI OBJ(SACBEER1) OBJTYPE(*MODULE)       =
+      //=                                RPGPPOPT(*LVL2) DBGVIEW(*SOURCE)     =
+      //=                                                                     =
+      //=                     CRTPGM PGM(SACBEER1) MODULE(SACBEER1 JSON00R)   =
+      //=                     BNDSRVPGM((YAJL) (YAJLR4) (QHTTPSVR/QZHBCGI))   =
+      //=                     ACTGRP(REST)                                    =
+      //=  Amendments:                                                        =
+      //=  DD.MM.YYYY  Name             Comment with shortcode                =
+      //=                                                                     =
+      //=======================================================================
+        CTL-OPT
+        DATEDIT(*DMY)
+        DATFMT(*EUR.)
+        TIMFMT(*HMS:)
+        OPTIMIZE(*NONE)
+        TEXT(*SRCMBRTXT)
+        OPTION(*SRCSTMT)
+
+        BNDDIR('QC2LE')
+        BNDDIR('@SYSFUNC')
+        PGMINFO(*PCML: *MODULE)
+        BNDDIR('YAJL');
+      //=======================================================================
+      //   D E C L A R E   I N P U T   P A R A M E T E R S                    =
+      //=======================================================================
+        DCL-PR SACBEER1    EXTPGM('SACBEER1');
+        END-PR;
+        DCL-PI SACBEER1;
+        END-PI;
+        DCL-PR JSON00R     EXTPGM;
+               ERRMSG      VARCHAR(80);
+               METHOD      VARCHAR(10);
+               API         VARCHAR(10);
+               PARAMETER   VARCHAR(1000);
+        END-PR;
+        DCL-PR EnvError;
+        END-PR;
+        DCL-PR GETRec;
+               FIELD       LIKE(FILE_T.SACBEE) CONST;
+               DATA        LIKEDS(DATA_T);
+        END-PR;
+        DCL-PR CreateJSON;
+               DATA        LIKEDS(DATA_T) CONST;
+               JSONDATA    LIKE(JSONBUF_T);
+               SUCCESS     IND CONST;
+        END-PR;
+        DCL-PR PUTRec;
+        END-PR;
+        DCL-PR POSTRec;
+        END-PR;
+        DCL-PR DELETERec;
+        END-PR;
+        //===================================================================
+        /COPY YAJL_H
+        //===================================================================
+        //   D E C L A R E   D A T A S T R U C T U R E   A R R A Y S        =
+        //===================================================================
+        DCL-DS FILE_T           QUALIFIED TEMPLATE;
+               SACBEE           ZONED(2:0);
+               SACBED           CHAR(100);
+               ISODAT           TIMESTAMP;
+               UID              CHAR(10);
+        END-DS;
+        DCL-DS DATA_T           QUALIFIED TEMPLATE;
+               SUCCESS          IND;
+               ERRMSG           CHAR(80);
+               COUNT            INT(10);
+               FILE1            LIKEDS(FILE_T) DIM(999);
+               FILE2            LIKEDS(FILE_T) DIM(999);
+        END-DS;
+        DCL-DS DATA             LIKEDS(DATA_T);
+        DCL-DS FILE1            LIKEDS(FILE_T);
+        DCL-DS FILE2            LIKEDS(FILE_T);
+      //=====================================================================
+      //   D E C L A R E   V A R I A B L E S                                =
+      //=====================================================================
+        DCL-S  ERRMSG        VARCHAR(80)                        INZ(*Blanks);
+        DCL-S  METHOD        VARCHAR(10)                        INZ(*BLANKS);
+        DCL-S  API           VARCHAR(10)                        INZ('SACBEER1');
+        DCL-S  PARAMETER     VARCHAR(1000)                      INZ(*BLANKS);
+        DCL-S  FIELD         LIKE(FILE_T.SACBEE);
+        DCL-S  JSONBUF_T     VARCHAR(200000)                    TEMPLATE;
+        DCL-S  X             INT(10);
+        DCL-S  JSONBUF       LIKE(JSONBUF_T);
+        DCL-S  HEADER        VARCHAR(500);
+      //=====================================================================
+      //   M A I N   F L O W   O F   P R O G R A M                          =
+      //=====================================================================
+        JSON00R(ERRMSG:METHOD:API:PARAMETER);
+           IF ERRMSG = *BLANKS;
+              // Environment error
+              MONITOR;
+                 FIELD = %INT(PARAMETER);
+              ON-ERROR;
+                 FIELD = 0;
+              ENDMON;
+              SELECT;
+                 WHEN METHOD = 'GET';
+                    // Code to retrieve record/s
+                    GETRec(FIELD:DATA);
+                 WHEN METHOD = 'PUT';
+                    // Code to update a record (idempotent)
+                    PUTRec();
+                 WHEN METHOD = 'POST';
+                    // Code to write a new record (non-idempotent)
+                    POSTRec();
+                 WHEN METHOD = 'DELETE';
+                    DELETERec();
+                    // Code to delete a record
+              ENDSL;
+           ELSE;
+              EnvError();
+           ENDIF;
+              CreateJSON(DATA:JSONBUF:DATA.SUCCESS);
+        *INLR = *ON;
+        RETURN;
+        //=====================================================================
+        //   P R O S E D U R E S                                              =
+        //=====================================================================
+        //---------------------------------------------------------------------
+        //--   Environment error
+        //---------------------------------------------------------------------
+        DCL-PROC EnvError;
+        DCL-PI   EnvError;
+        END-PI;
+                 DATA.SUCCESS = *OFF;
+                 DATA.ERRMSG = ERRMSG;
+                 DATA.COUNT = 0;
+                 RETURN;
+        END-PROC;
+        //---------------------------------------------------------------------
+        //--   ReadData(): Read data into the data struct
+        //--
+        //--      FIELD = (input) the the record to read, or *Blanks
+        //--                 for all records
+        //--
+        //--       Data = (output) the 'data' data structure that contains
+        //--                 the data to be output
+        //---------------------------------------------------------------------
+        DCL-PROC GETRec;
+        DCL-PI   GETRec;
+                 FIELD       LIKE(FILE_T.SACBEE) CONST;
+                 DATA        LIKEDS(DATA_T);
+        END-PI;
+           CLEAR DATA;
+           IF FIELD = 0;
+                 EXEC SQL DECLARE FILE1 CURSOR FOR
+                      SELECT SACBEE, SACBED, ISODAT, UID
+                        FROM SACBEEP
+                      ORDER BY SACBEE;
+                 EXEC SQL OPEN FILE1;
+                 EXEC SQL FETCH NEXT FROM FILE1 INTO :FILE1;
+           ELSE;
+                 EXEC SQL DECLARE FILE2 CURSOR FOR
+                      SELECT SACBEE, SACBED, ISODAT, UID
+                        FROM SACBEEP
+                      WHERE SACBEE = :FIELD;
+                 EXEC SQL OPEN FILE2;
+                 EXEC SQL FETCH NEXT FROM FILE2 INTO :FILE2;
+           ENDIF;
+
+                 IF %SUBST(SQLSTT:1:2)='00' or %SUBST(SQLSTT:1:2)='01';
+                    DATA.COUNT = 0;
+                    DATA.SUCCESS = *ON;
+                 ELSEIF %SUBST(SQLSTT:1:2) = '02';
+                    DATA.SUCCESS = *OFF;
+                    DATA.ERRMSG = 'No records found in option file SACBEEP';
+                 ELSE;
+                    DATA.SUCCESS = *OFF;
+                    DATA.ERRMSG = 'SQL statement failed; see job log.';
+                 ENDIF;
+
+           IF FIELD = 0;
+                 DOW %SUBST(SQLSTT:1:2)='00' or %SUBST(SQLSTT:1:2)='01';
+                    DATA.COUNT += 1;
+                    EVAL-CORR DATA.FILE1(DATA.COUNT) = FILE1;
+                    EXEC SQL FETCH NEXT FROM FILE1 INTO :FILE1;
+                 ENDDO;
+                 EXEC SQL CLOSE FILE1;
+           ELSE;
+                 DOW %SUBST(SQLSTT:1:2)='00' or %SUBST(SQLSTT:1:2)='01';
+                    DATA.COUNT += 1;
+                    EVAL-CORR DATA.FILE1(DATA.COUNT) = FILE2;
+                    EXEC SQL FETCH NEXT FROM FILE2 INTO :FILE2;
+                 ENDDO;
+                 EXEC SQL CLOSE FILE2;
+           ENDIF;
+                 RETURN;
+        END-PROC;
+        //---------------------------------------------------------------------
+        //--   CreateJSON():  Transform the 'data' ds/array into JSON
+        //--
+        //--       data = (input) data struct with data to return
+        //--   jsonData = (output) the same data in JSON format
+        //--
+        //--   returns YAJL generator status
+        //---------------------------------------------------------------------
+        DCL-PROC CreateJSON;
+        DCL-PI   CreateJSON;
+                 DATA        LIKEDS(DATA_T) CONST;
+                 JSONDATA    LIKE(JSONBUF_T);
+                 SUCCESS     IND CONST;
+        END-PI;
+
+        //--   Generated document is "pretty" for test (readable)
+        //       YAJL_GENOPEN(*ON);
+        //--   Generated document is not "pretty"  for live
+        //--   More efficient for the computer to process
+                 YAJL_GENOPEN(*OFF);
+
+                 YAJL_BEGINOBJ();
+                   YAJL_addBool('SUCCESS': DATA.SUCCESS );
+                   YAJL_addChar('ERRMSG': %TRIMR(DATA.ERRMSG));
+                   YAJL_addNum('COUNT': %CHAR(DATA.COUNT) );
+
+                   YAJL_beginArray('FILE1');
+                     FOR X = 1 TO DATA.COUNT;
+                       YAJL_beginObj();
+                         YAJL_addNum
+                          ('BEEStatusCode'     :%CHAR(DATA.FILE1(X).SACBEE));
+                         YAJL_addChar
+                         ('BEEStatusDescription' :%TRIMR(DATA.FILE1(X).SACBED));
+                         YAJL_addChar
+                          ('DateCreated'       :%TRIMR(%CHAR(%TIMESTAMP
+                                               (DATA.FILE1(X).ISODAT):*ISO)));
+                         YAJL_addChar
+                          ('CreatorUserID'     :%TRIMR(DATA.FILE1(X).UID));
+                       YAJL_endObj();
+                     ENDFOR;
+                   YAJL_endArray();
+
+                 YAJL_endObj();
+
+                 HEADER = 'Content-type: application/json; charset=utf-8';
+                 IF DATA.SUCCESS;
+                    yajl_writeStdout(200: HEADER);
+                 ELSE;
+                    yajl_writeStdout(500: HEADER);
+                 ENDIF;
+
+                 YAJL_genClose();
+                 RETURN;
+        END-PROC;
+        //---------------------------------------------------------------------
+        DCL-PROC POSTRec;
+        DCL-PI   POSTRec;
+        END-PI;
+                 DATA.SUCCESS = *OFF;
+                 DATA.ERRMSG = 'POST not allowed';
+                 DATA.COUNT = 0;
+                 RETURN;
+        END-PROC;
+        //---------------------------------------------------------------------
+        DCL-PROC PUTRec;
+        DCL-PI   PUTRec;
+        END-PI;
+                 DATA.SUCCESS = *OFF;
+                 DATA.ERRMSG = 'PUT not allowed';
+                 DATA.COUNT = 0;
+                 RETURN;
+        END-PROC;
+        //---------------------------------------------------------------------
+        DCL-PROC DELETERec;
+        DCL-PI   DELETERec;
+        END-PI;
+                 DATA.SUCCESS = *OFF;
+                 DATA.ERRMSG = 'DELETE not allowed';
+                 DATA.COUNT = 0;
+                 RETURN;
+        END-PROC;
+        //---------------------------------------------------------------------
