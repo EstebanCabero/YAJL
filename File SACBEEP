@@ -1,0 +1,41 @@
+ RUNSQLSTM SRCFILE(QSQLSRC) SRCMBR(SACBEEP)
+
+-- DEFINE TABLE HERE
+   CREATE TABLE "BEEStatusMaster" for system name SACBEEP
+   (
+      "BEEStatusCode"                FOR COLUMN  SACBEE,
+      "BEEStatusDescription"         FOR COLUMN  SACBED,
+      "DateCreated"                  FOR COLUMN  ISODAT,
+      "CreatorUserID"                FOR COLUMN  UID
+   )
+   AS (SELECT
+       SACBEE,
+       SACBED,
+       ISODAT,
+       UID
+   FROM DICTIONARY
+   )
+   WITH NO DATA
+   RCDFMT SACBEEPR
+   ;
+   ALTER TABLE SACBEEP ADD CONSTRAINT SACBEEP_K1 PRIMARY KEY
+   (SACBEE)
+   ;
+   ALTER TABLE SACBEEP ADD CONSTRAINT SACBEEP_U1 UNIQUE (SACBED)
+   ;
+-- DEFINE LABELS HERE - TABLE
+   LABEL ON TABLE SACBEEP IS 'BEE Status Master'
+   ;
+-- DEFINE COLUMN LABELS HERE
+   LABEL ON COLUMN SACBEEP (
+      SACBEE     TEXT IS 'BEE Status Code'                           ,
+      SACBED     TEXT IS 'BEE Status Description'                    ,
+      ISODAT     TEXT IS 'Date Created'                              ,
+      UID        TEXT IS 'Creator User ID'
+   );
+   LABEL ON COLUMN SACBEEP (
+      SACBEE          IS 'BEE                 Status              Code',
+      SACBED          IS 'BEE Status          Description',
+      ISODAT          IS 'Date                Created',
+      UID             IS 'Creator             User ID'
+   );
