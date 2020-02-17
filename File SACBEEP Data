@@ -1,0 +1,14 @@
+Use the command  CPYFRMIMPF to populate the file.
+
+1   ,"100 or above","2019-10-10-00.00.00.000000","SACRRA"
+2   ,"85 to 99.99","2019-10-10-00.00.00.000000","SACRRA"
+3   ,"75 to 84.99","2019-10-10-00.00.00.000000","SACRRA"
+4   ,"65 to 74.99","2019-10-10-00.00.00.000000","SACRRA"
+5   ,"55 to 64.99","2019-10-10-00.00.00.000000","SACRRA"
+6   ,"45 to 54.99","2019-10-10-00.00.00.000000","SACRRA"
+7   ,"40 to 44.99","2019-10-10-00.00.00.000000","SACRRA"
+8   ,"30 to 39.99","2019-10-10-00.00.00.000000","SACRRA"
+9   ,"Unknown","2019-10-10-00.00.00.000000","SACRRA"
+10  ,"EME (Exempted Micro-Enterprise) Turnover < R5 million per annum","2019-10-10-00.00.00.000000","SACRRA"
+11  ,"EME (Exempted Micro-Enterprise) Tourism Industry Turnover < R2,5 million per annum","2019-10-10-00.00.00.000000","SACRRA"
+12  ,"Non Compliant","2019-10-10-00.00.00.000000","SACRRA" 
