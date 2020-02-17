@@ -1,0 +1,53 @@
+-- DEFINE TABLE HERE
+   CREATE TABLE "Dictionary_" for system name DICTIONARY
+   (
+    "ISODate"                      FOR COLUMN ISODAT       TIMESTAMP  NOT NULL,
+    "AdverseClosure"               FOR COLUMN SACASA      VARCHAR(3)  NOT NULL,
+    "D/MorBoth"                    FOR COLUMN SACASB     VARCHAR(10)  NOT NULL,
+    "StatusCode"                   FOR COLUMN SACASC      VARCHAR(2)  NOT NULL,
+    "StatusDescription"            FOR COLUMN SACASD     VARCHAR(40)  NOT NULL,
+    "Closure"                      FOR COLUMN SACASE      VARCHAR(3)  NOT NULL,
+    "StatusDefinition"             FOR COLUMN SACASF    VARCHAR(200)  NOT NULL,
+    "RepeatMonthonMonth"           FOR COLUMN SACASM      VARCHAR(3)  NOT NULL,
+    "PositiveClosure"              FOR COLUMN SACASP      VARCHAR(3)  NOT NULL,
+    "RepeatEver"                   FOR COLUMN SACASR      VARCHAR(3)  NOT NULL,
+    "BEEStatusDescription"         FOR COLUMN SACBED    VARCHAR(100)  NOT NULL,
+    "BEEStatusCode"                FOR COLUMN SACBEE        DEC(2,0)  NOT NULL,
+    "UserCode"                     FOR COLUMN UID        VARCHAR(10)  NOT NULL
+   );
+
+-- DEFINE LABELS HERE - TABLE
+   LABEL ON TABLE DICTIONARY IS 'Data Dictionary'
+   ;
+
+-- DEFINE COLUMN LABELS HERE
+   LABEL ON COLUMN DICTIONARY (
+      ISODAT     TEXT IS 'ISO Date',
+      SACASA     TEXT IS 'Adverse Closure',
+      SACASB     TEXT IS 'D/M or Both',
+      SACASC     TEXT IS 'Status Code',
+      SACASD     TEXT IS 'Status Description',
+      SACASE     TEXT IS 'Closure',
+      SACASF     TEXT IS 'Status Definition',
+      SACASM     TEXT IS 'Repeat Month on Month',
+      SACASP     TEXT IS 'Positive Closure',
+      SACASR     TEXT IS 'Repeat Ever',
+      SACBED     TEXT IS 'BEE Status Description',
+      SACBEE     TEXT IS 'BEE Status Code',
+      UID        TEXT IS 'User Code'
+   );
+   LABEL ON COLUMN DICTIONARY (
+      ISODAT          IS 'ISO                 Date',
+      SACASA          IS 'Adverse             Closure',
+      SACASB          IS 'D/M                 or Both',
+      SACASC          IS 'Status              Code',
+      SACASD          IS 'Status Description',
+      SACASE          IS 'Closure',
+      SACASF          IS 'Status Definition',
+      SACASM          IS 'Repeat              Month on            Month',
+      SACASP          IS 'Positive            Closure',
+      SACASR          IS 'Repeat              Ever',
+      SACBED          IS 'BEE Status          Description',
+      SACBEE          IS 'BEE                 Status              Code',
+      UID             IS 'User                Code'
+   );
